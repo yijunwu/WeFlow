@@ -382,6 +382,10 @@
             line-height: 1.5;
             box-shadow: 0 2px 10px var(--primary-light);
           }
+
+          .bubble-body {
+            align-items: flex-end;
+          }
         }
 
         &.received {
@@ -394,6 +398,10 @@
             line-height: 1.5;
             backdrop-filter: blur(10px);
             border: 1px solid var(--border-color);
+          }
+
+          .bubble-body {
+            align-items: flex-start;
           }
         }
 
