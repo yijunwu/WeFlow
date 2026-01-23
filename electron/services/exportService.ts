@@ -321,6 +321,33 @@ class ExportService {
       }
       return '[其他消息]'
     }
+    if (localType === 42) {
+      const normalized = this.normalizeAppMessageContent(safeContent)
+      const nickname =
+        this.extractXmlValue(normalized, 'nickname') ||
+        this.extractXmlValue(normalized, 'displayname') ||
+        this.extractXmlValue(normalized, 'name')
+      return nickname ? `[名片]${nickname}` : '[名片]'
+    }
+    if (localType === 43) {
+      const normalized = this.normalizeAppMessageContent(safeContent)
+      const lengthValue =
+        this.extractXmlValue(normalized, 'playlength') ||
+        this.extractXmlValue(normalized, 'playLength') ||
+        this.extractXmlValue(normalized, 'length') ||
+        this.extractXmlValue(normalized, 'duration')
+      const seconds = lengthValue ? this.parseDurationSeconds(lengthValue) : null
+      return seconds ? `[视频]${seconds}s` : '[视频]'
+    }
+    if (localType === 48) {
+      const normalized = this.normalizeAppMessageContent(safeContent)
+      const location =
+        this.extractXmlValue(normalized, 'label') ||
+        this.extractXmlValue(normalized, 'poiname') ||
+        this.extractXmlValue(normalized, 'poiName') ||
+        this.extractXmlValue(normalized, 'name')
+      return location ? `[定位]${location}` : '[定位]'
+    }
     if (localType === 10000 || localType === 266287972401) {
       return this.cleanSystemMessage(safeContent)
     }
@@ -331,9 +358,30 @@ class ExportService {
       const typeMatch = /<type>(\d+)<\/type>/i.exec(normalized)
       const subType = typeMatch ? parseInt(typeMatch[1], 10) : 0
       const title = this.extractXmlValue(normalized, 'title') || this.extractXmlValue(normalized, 'appname')
+      if (subType === 3 || normalized.includes('<musicurl') || normalized.includes('<songname')) {
+        const songName = this.extractXmlValue(normalized, 'songname') || title || '音乐'
+        return `[音乐]${songName}`
+      }
       if (subType === 6) {
         const fileName = this.extractXmlValue(normalized, 'filename') || title || '文件'
         return `[文件]${fileName}`
+      }
+      if (title.includes('转账') || normalized.includes('transfer')) {
+        const amount = this.extractAmountFromText(
+          [
+            title,
+            this.extractXmlValue(normalized, 'des'),
+            this.extractXmlValue(normalized, 'money'),
+            this.extractXmlValue(normalized, 'amount'),
+            this.extractXmlValue(normalized, 'fee')
+          ]
+            .filter(Boolean)
+            .join(' ')
+        )
+        return amount ? `[转账]${amount}` : '[转账]'
+      }
+      if (title.includes('红包') || normalized.includes('hongbao')) {
+        return `[红包]${title || '微信红包'}`
       }
       if (subType === 19 || normalized.includes('<recorditem')) {
         const forwardName =
@@ -354,6 +402,19 @@ class ExportService {
     }
 
     return '[其他消息]'
+  }
+
+  private parseDurationSeconds(value: string): number | null {
+    const numeric = Number(value)
+    if (!Number.isFinite(numeric) || numeric <= 0) return null
+    if (numeric >= 1000) return Math.round(numeric / 1000)
+    return Math.round(numeric)
+  }
+
+  private extractAmountFromText(text: string): string | null {
+    if (!text) return null
+    const match = /([¥￥]\s*\d+(?:\.\d+)?|\d+(?:\.\d+)?)/.exec(text)
+    return match ? match[1].replace(/\s+/g, '') : null
   }
 
   private stripSenderPrefix(content: string): string {
