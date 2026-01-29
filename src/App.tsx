@@ -18,6 +18,7 @@ import ExportPage from './pages/ExportPage'
 import VideoWindow from './pages/VideoWindow'
 import SnsPage from './pages/SnsPage'
 import ContactsPage from './pages/ContactsPage'
+import ChatHistoryPage from './pages/ChatHistoryPage'
 
 import { useAppStore } from './stores/appStore'
 import { themes, useThemeStore, type ThemeId } from './stores/themeStore'
@@ -49,6 +50,7 @@ function App() {
   const isAgreementWindow = location.pathname === '/agreement-window'
   const isOnboardingWindow = location.pathname === '/onboarding-window'
   const isVideoPlayerWindow = location.pathname === '/video-player-window'
+  const isChatHistoryWindow = location.pathname.startsWith('/chat-history/')
   const [themeHydrated, setThemeHydrated] = useState(false)
 
   // 锁定状态
@@ -298,6 +300,11 @@ function App() {
     return <VideoWindow />
   }
 
+  // 独立聊天记录窗口
+  if (isChatHistoryWindow) {
+    return <ChatHistoryPage />
+  }
+
   // 主窗口 - 完整布局
   return (
     <div className="app-container">
@@ -392,6 +399,7 @@ function App() {
               <Route path="/export" element={<ExportPage />} />
               <Route path="/sns" element={<SnsPage />} />
               <Route path="/contacts" element={<ContactsPage />} />
+              <Route path="/chat-history/:sessionId/:messageId" element={<ChatHistoryPage />} />
             </Routes>
           </RouteGuard>
         </main>

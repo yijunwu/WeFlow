@@ -57,7 +57,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     openVideoPlayerWindow: (videoPath: string, videoWidth?: number, videoHeight?: number) =>
       ipcRenderer.invoke('window:openVideoPlayerWindow', videoPath, videoWidth, videoHeight),
     resizeToFitVideo: (videoWidth: number, videoHeight: number) =>
-      ipcRenderer.invoke('window:resizeToFitVideo', videoWidth, videoHeight)
+      ipcRenderer.invoke('window:resizeToFitVideo', videoWidth, videoHeight),
+    openChatHistoryWindow: (sessionId: string, messageId: number) =>
+      ipcRenderer.invoke('window:openChatHistoryWindow', sessionId, messageId)
   },
 
   // 数据库路径
@@ -121,7 +123,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
     execQuery: (kind: string, path: string | null, sql: string) =>
       ipcRenderer.invoke('chat:execQuery', kind, path, sql),
-    getContacts: () => ipcRenderer.invoke('chat:getContacts')
+    getContacts: () => ipcRenderer.invoke('chat:getContacts'),
+    getMessage: (sessionId: string, localId: number) =>
+      ipcRenderer.invoke('chat:getMessage', sessionId, localId)
   },
 
 
