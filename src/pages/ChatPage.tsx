@@ -2155,6 +2155,9 @@ function MessageBubble({ message, session, showTime, myAvatarUrl, isGroupChat, o
   }, [isVoice, message.localId, requestVoiceTranscript])
 
   // 视频懒加载
+  const videoAutoLoadTriggered = useRef(false)
+  const [videoClicked, setVideoClicked] = useState(false)
+  
   useEffect(() => {
     if (!isVideo || !videoContainerRef.current) return
 
@@ -2178,19 +2181,18 @@ function MessageBubble({ message, session, showTime, myAvatarUrl, isGroupChat, o
     return () => observer.disconnect()
   }, [isVideo])
 
-  // 加载视频信息
-  useEffect(() => {
-    if (!isVideo || !isVideoVisible || videoInfo || videoLoading) return
-    if (!videoMd5) {
-
-      return
-    }
-
-
+  // 视频加载中状态引用，避免依赖问题
+  const videoLoadingRef = useRef(false)
+  
+  // 加载视频信息（添加重试机制）
+  const requestVideoInfo = useCallback(async () => {
+    if (!videoMd5 || videoLoadingRef.current) return
+    
+    videoLoadingRef.current = true
     setVideoLoading(true)
-    window.electronAPI.video.getVideoInfo(videoMd5).then((result: { success: boolean; exists: boolean; videoUrl?: string; coverUrl?: string; thumbUrl?: string; error?: string }) => {
-
-      if (result && result.success) {
+    try {
+      const result = await window.electronAPI.video.getVideoInfo(videoMd5)
+      if (result && result.success && result.exists) {
         setVideoInfo({
           exists: result.exists,
           videoUrl: result.videoUrl,
@@ -2198,16 +2200,25 @@ function MessageBubble({ message, session, showTime, myAvatarUrl, isGroupChat, o
           thumbUrl: result.thumbUrl
         })
       } else {
-        console.error('[Video Debug] Video info failed:', result)
         setVideoInfo({ exists: false })
       }
-    }).catch((err: unknown) => {
-      console.error('[Video Debug] getVideoInfo error:', err)
+    } catch (err) {
       setVideoInfo({ exists: false })
-    }).finally(() => {
+    } finally {
+      videoLoadingRef.current = false
       setVideoLoading(false)
-    })
-  }, [isVideo, isVideoVisible, videoInfo, videoLoading, videoMd5])
+    }
+  }, [videoMd5])
+  
+  // 视频进入视野时自动加载
+  useEffect(() => {
+    if (!isVideo || !isVideoVisible) return
+    if (videoInfo?.exists) return // 已成功加载，不需要重试
+    if (videoAutoLoadTriggered.current) return
+    
+    videoAutoLoadTriggered.current = true
+    void requestVideoInfo()
+  }, [isVideo, isVideoVisible, videoInfo, requestVideoInfo])
 
 
   // 根据设置决定是否自动转写
@@ -2366,16 +2377,27 @@ function MessageBubble({ message, session, showTime, myAvatarUrl, isGroupChat, o
         )
       }
 
-      // 视频不存在
+      // 视频不存在 - 添加点击重试功能
       if (!videoInfo?.exists || !videoInfo.videoUrl) {
         return (
-          <div className="video-unavailable" ref={videoContainerRef}>
+          <button
+            className={`video-unavailable ${videoClicked ? 'clicked' : ''}`}
+            ref={videoContainerRef}
+            onClick={() => {
+              setVideoClicked(true)
+              setTimeout(() => setVideoClicked(false), 800)
+              videoAutoLoadTriggered.current = false
+              void requestVideoInfo()
+            }}
+            type="button"
+          >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polygon points="23 7 16 12 23 17 23 7"></polygon>
               <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
             </svg>
-            <span>视频不可用</span>
-          </div>
+            <span>视频未找到</span>
+            <span className="video-action">{videoClicked ? '已点击…' : '点击重试'}</span>
+          </button>
         )
       }
 

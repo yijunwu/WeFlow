@@ -191,7 +191,7 @@ export class WcdbCore {
   }
 
   private isLogEnabled(): boolean {
-    if (process.env.WEFLOW_WORKER === '1') return false
+    // 移除 Worker 线程的日志禁用逻辑，允许在 Worker 中记录日志
     if (process.env.WCDB_LOG_ENABLED === '1') return true
     return this.logEnabled
   }
