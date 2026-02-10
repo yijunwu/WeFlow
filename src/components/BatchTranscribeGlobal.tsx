@@ -1,6 +1,6 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Loader2, X, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
+import { Loader2, X, CheckCircle, XCircle, AlertCircle, Clock } from 'lucide-react'
 import { useBatchTranscribeStore } from '../stores/batchTranscribeStore'
 import '../styles/batchTranscribe.scss'
 
@@ -16,9 +16,45 @@ export const BatchTranscribeGlobal: React.FC = () => {
     showResult,
     result,
     sessionName,
+    startTime,
     setShowToast,
     setShowResult
   } = useBatchTranscribeStore()
+
+  const [eta, setEta] = useState<string>('')
+
+  // 计算剩余时间
+  useEffect(() => {
+    if (!isBatchTranscribing || !startTime || progress.current === 0) {
+      setEta('')
+      return
+    }
+
+    const timer = setInterval(() => {
+      const now = Date.now()
+      const elapsed = now - startTime
+      const rate = progress.current / elapsed // ms per item
+      const remainingItems = progress.total - progress.current
+
+      if (remainingItems <= 0) {
+        setEta('')
+        return
+      }
+
+      const remainingTimeMs = remainingItems / rate
+      const remainingSeconds = Math.ceil(remainingTimeMs / 1000)
+
+      if (remainingSeconds < 60) {
+        setEta(`${remainingSeconds}秒`)
+      } else {
+        const minutes = Math.floor(remainingSeconds / 60)
+        const seconds = remainingSeconds % 60
+        setEta(`${minutes}分${seconds}秒`)
+      }
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [isBatchTranscribing, startTime, progress.current, progress.total])
 
   return (
     <>
@@ -35,14 +71,23 @@ export const BatchTranscribeGlobal: React.FC = () => {
             </button>
           </div>
           <div className="batch-progress-toast-body">
-            <div className="progress-text">
-              <span>{progress.current} / {progress.total}</span>
-              <span className="progress-percent">
-                {progress.total > 0
-                  ? Math.round((progress.current / progress.total) * 100)
-                  : 0}%
-              </span>
+            <div className="progress-info-row">
+              <div className="progress-text">
+                <span>{progress.current} / {progress.total}</span>
+                <span className="progress-percent">
+                  {progress.total > 0
+                    ? Math.round((progress.current / progress.total) * 100)
+                    : 0}%
+                </span>
+              </div>
+              {eta && (
+                <div className="progress-eta">
+                  <Clock size={12} />
+                  <span>剩余 {eta}</span>
+                </div>
+              )}
             </div>
+
             <div className="progress-bar">
               <div
                 className="progress-fill"

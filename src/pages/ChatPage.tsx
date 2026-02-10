@@ -1311,7 +1311,7 @@ function ChatPage(_props: ChatPageProps) {
     let successCount = 0
     let failCount = 0
     let completedCount = 0
-    const concurrency = 3
+    const concurrency = 10
 
     const transcribeOne = async (msg: Message) => {
       try {
@@ -2511,7 +2511,7 @@ function MessageBubble({ message, session, showTime, myAvatarUrl, isGroupChat, o
   // 视频懒加载
   const videoAutoLoadTriggered = useRef(false)
   const [videoClicked, setVideoClicked] = useState(false)
-  
+
   useEffect(() => {
     if (!isVideo || !videoContainerRef.current) return
 
@@ -2537,11 +2537,11 @@ function MessageBubble({ message, session, showTime, myAvatarUrl, isGroupChat, o
 
   // 视频加载中状态引用，避免依赖问题
   const videoLoadingRef = useRef(false)
-  
+
   // 加载视频信息（添加重试机制）
   const requestVideoInfo = useCallback(async () => {
     if (!videoMd5 || videoLoadingRef.current) return
-    
+
     videoLoadingRef.current = true
     setVideoLoading(true)
     try {
@@ -2563,13 +2563,13 @@ function MessageBubble({ message, session, showTime, myAvatarUrl, isGroupChat, o
       setVideoLoading(false)
     }
   }, [videoMd5])
-  
+
   // 视频进入视野时自动加载
   useEffect(() => {
     if (!isVideo || !isVideoVisible) return
     if (videoInfo?.exists) return // 已成功加载，不需要重试
     if (videoAutoLoadTriggered.current) return
-    
+
     videoAutoLoadTriggered.current = true
     void requestVideoInfo()
   }, [isVideo, isVideoVisible, videoInfo, requestVideoInfo])

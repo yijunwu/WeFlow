@@ -12,6 +12,7 @@ export interface BatchTranscribeState {
   /** 转写结果 */
   result: { success: number; fail: number }
   /** 当前转写的会话名 */
+  startTime: number
   sessionName: string
 
   // Actions
@@ -30,6 +31,7 @@ export const useBatchTranscribeStore = create<BatchTranscribeState>((set) => ({
   showResult: false,
   result: { success: 0, fail: 0 },
   sessionName: '',
+  startTime: 0,
 
   startTranscribe: (total, sessionName) => set({
     isBatchTranscribing: true,
@@ -37,7 +39,8 @@ export const useBatchTranscribeStore = create<BatchTranscribeState>((set) => ({
     progress: { current: 0, total },
     showResult: false,
     result: { success: 0, fail: 0 },
-    sessionName
+    sessionName,
+    startTime: Date.now()
   }),
 
   updateProgress: (current, total) => set({
@@ -48,7 +51,8 @@ export const useBatchTranscribeStore = create<BatchTranscribeState>((set) => ({
     isBatchTranscribing: false,
     showToast: false,
     showResult: true,
-    result: { success, fail }
+    result: { success, fail },
+    startTime: 0
   }),
 
   setShowToast: (show) => set({ showToast: show }),
@@ -60,6 +64,7 @@ export const useBatchTranscribeStore = create<BatchTranscribeState>((set) => ({
     showToast: false,
     showResult: false,
     result: { success: 0, fail: 0 },
-    sessionName: ''
+    sessionName: '',
+    startTime: 0
   })
 }))
